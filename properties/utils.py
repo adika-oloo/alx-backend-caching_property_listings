@@ -5,9 +5,85 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import timedelta
 import logging
+import redis
 from .models import Property
 
 logger = logging.getLogger(__name__)
+
+def get_redis_cache_metrics():
+    """
+    Retrieve Redis cache metrics including keyspace hits, misses, and calculate hit ratio
+    Returns a dictionary with cache performance metrics
+    """
+    try:
+        # Get Redis connection from cache
+        redis_client = cache._client
+        
+        # Get Redis info command output
+        info = redis_client.info()
+        
+        # Extract keyspace hits and misses
+        keyspace_hits = info.get('keyspace_hits', 0)
+        keyspace_misses = info.get('keyspace_misses', 0)
+        
+        # Calculate total requests and hit ratio
+        total_requests = keyspace_hits + keyspace_misses
+        hit_ratio = keyspace_hits / total_requests if total_requests > 0 else 0
+        
+        # Get additional cache metrics
+        used_memory = info.get('used_memory', 0)
+        used_memory_human = info.get('used_memory_human', '0B')
+        evicted_keys = info.get('evicted_keys', 0)
+        expired_keys = info.get('expired_keys', 0)
+        connected_clients = info.get('connected_clients', 0)
+        
+        metrics = {
+            'keyspace_hits': keyspace_hits,
+            'keyspace_misses': keyspace_misses,
+            'total_requests': total_requests,
+            'hit_ratio': round(hit_ratio, 4),  # Round to 4 decimal places
+            'hit_ratio_percentage': round(hit_ratio * 100, 2),  # As percentage
+            'used_memory': used_memory,
+            'used_memory_human': used_memory_human,
+            'evicted_keys': evicted_keys,
+            'expired_keys': expired_keys,
+            'connected_clients': connected_clients,
+            'timestamp': timezone.now().isoformat()
+        }
+        
+        # Log the metrics
+        logger.info(
+            f"Redis cache metrics - "
+            f"Hits: {keyspace_hits}, Misses: {keyspace_misses}, "
+            f"Total: {total_requests}, Hit Ratio: {hit_ratio:.2%}, "
+            f"Memory: {used_memory_human}, Evicted: {evicted_keys}, "
+            f"Expired: {expired_keys}, Clients: {connected_clients}"
+        )
+        
+        return metrics
+        
+    except redis.ConnectionError as e:
+        logger.error(f"Redis connection error: {e}")
+        return {
+            'error': 'Redis connection failed',
+            'keyspace_hits': 0,
+            'keyspace_misses': 0,
+            'total_requests': 0,
+            'hit_ratio': 0,
+            'hit_ratio_percentage': 0,
+            'timestamp': timezone.now().isoformat()
+        }
+    except Exception as e:
+        logger.exception(f"Error retrieving Redis cache metrics: {e}")
+        return {
+            'error': str(e),
+            'keyspace_hits': 0,
+            'keyspace_misses': 0,
+            'total_requests': 0,
+            'hit_ratio': 0,
+            'hit_ratio_percentage': 0,
+            'timestamp': timezone.now().isoformat()
+        }
 
 def get_all_properties():
     """
@@ -315,5 +391,27 @@ def import_properties_from_csv(file_path):
         'errors': errors,
         'success': len(errors) == 0
     }
+
+def monitor_cache_performance():
+    """
+    Monitor cache performance and log metrics regularly
+    This can be called from a Celery periodic task or management command
+    """
+    metrics = get_redis_cache_metrics()
+    
+    # Log warning if hit ratio is low
+    if metrics.get('hit_ratio', 0) < 0.7:  # 70% hit ratio threshold
+        logger.warning(
+            f"Low cache hit ratio: {metrics['hit_ratio_percentage']}%. "
+            f"Consider reviewing cache expiration policies or increasing cache size."
+        )
+    
+    # Log warning if memory usage is high
+    if metrics.get('used_memory', 0) > 0 and 'error' not in metrics:
+        # This would need actual maxmemory configuration to calculate properly
+        logger.info(f"Current memory usage: {metrics['used_memory_human']}")
+    
+    return metrics
+    
 
 
