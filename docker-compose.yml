@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  db:
+  postgres:
     image: postgres:latest
     container_name: postgres_db
     environment:
@@ -18,6 +18,10 @@ services:
     container_name: redis_cache
     ports:
       - "6379:6379"
+    volumes:              # ✅ add redis_data volume
+      - redis_data:/data
 
 volumes:
   postgres_data:
+  redis_data:             # ✅ add here
+

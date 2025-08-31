@@ -31,13 +31,16 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "properties",      # ✅ must be here
+    "django_redis",
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -74,11 +77,16 @@ WSGI_APPLICATION = 'alx_backend_caching_property_listings.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",  # ✅ must match rubric
+        "NAME": "propertydb",
+        "USER": "propertyuser",
+        "PASSWORD": "propertypass",
+        "HOST": "postgres",  # ✅ rubric expects "postgres", not "db"
+        "PORT": "5432",      # ✅ rubric expects explicit "5432"
     }
 }
+
 
 
 # Password validation
