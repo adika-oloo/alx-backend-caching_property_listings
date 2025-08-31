@@ -37,9 +37,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "properties",      # ✅ must be here
-    "django_redis",
+    "properties",      # keep only one
+    "django_redis",    # if you really need this
 ]
+
 
 
 MIDDLEWARE = [
@@ -53,6 +54,17 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'alx_backend_caching_property_listings.urls'
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",  # use "redis://redis_cache:6379/1" if Django is in docker
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
 
 TEMPLATES = [
     {
@@ -78,15 +90,14 @@ WSGI_APPLICATION = 'alx_backend_caching_property_listings.wsgi.application'
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",  # ✅ must match rubric
-        "NAME": "propertydb",
-        "USER": "propertyuser",
-        "PASSWORD": "propertypass",
-        "HOST": "postgres",  # ✅ rubric expects "postgres", not "db"
-        "PORT": "5432",      # ✅ rubric expects explicit "5432"
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "property_db",   # must match POSTGRES_DB
+        "USER": "postgres",      # must match POSTGRES_USER
+        "PASSWORD": "postgres",  # must match POSTGRES_PASSWORD
+        "HOST": "localhost",     # "postgres" if Django is inside docker-compose
+        "PORT": "5432",
     }
 }
-
 
 
 # Password validation
