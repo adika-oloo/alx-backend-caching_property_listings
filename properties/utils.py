@@ -178,15 +178,7 @@ def get_property_statistics():
     categories = dict(Property.PROPERTY_CATEGORIES)
     category_stats = {}
     for category_code, category_name in categories.items():
-        count = Property.objects.filter(category=category_code).count()
-        category_stats[category_name] = count
-    
-    # Average price
-    avg_price = Property.objects.aggregate(
-        avg_price=models.Avg('price_per_night')
-    )['avg_price'] or 0
-    
-    # Most expensive property
+        count = Property.objects.filter(
     most_expensive = Property.objects.order_by('-price_per_night').first()
     
     return {
@@ -254,11 +246,7 @@ def import_properties_from_csv(file_path):
                 for row_num, row in enumerate(reader, 2):  # Start from 2 (header is row 1)
                     try:
                         # Validate required fields
-                        required_fields = ['title', 'price_per_night', 'bedrooms', 'bathrooms', 'guests', 'country']
-                        for field in required_fields:
-                            if not row.get(field):
-                                errors.append(f"Row {row_num}: Missing required field '{field}'")
-                                continue
+  
                         
                         # Create or update property
                         property, created = Property.objects.update_or_create(
@@ -267,7 +255,7 @@ def import_properties_from_csv(file_path):
                                 'description': row.get('description', ''),
                                 'price_per_night': float(row['price_per_night']),
                                 'bedrooms': int(row['bedrooms']),
-                                'bathrooms': int(row['bathrooms']),
+                               'bathrooms': int(row['bathrooms']),
                                 'guests': int(row['guests']),
                                 'country': row['country'],
                                 'country_code': row.get('country_code') or get_country_code(row['country']),
