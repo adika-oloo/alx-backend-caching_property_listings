@@ -9,11 +9,13 @@ class PropertiesConfig(AppConfig):
     
     def ready(self):
         """
-        Import signals when the app is ready
+        Import signals when the app is ready to register signal handlers
         """
         try:
             # Import signals module to register signal handlers
-            from . import signals
+            import properties.signals
             logger.debug("Properties signals imported successfully")
         except ImportError as e:
             logger.error(f"Failed to import properties signals: {e}")
+        except Exception as e:
+            logger.error(f"Error in properties signals: {e}")
